@@ -233,6 +233,69 @@ canvas{display:block;width:100%;height:280px}
   .month-summary{grid-template-columns:1fr 1fr}
 }
 
+
+.paycheck-section{margin-top:18px}
+.paycheck-list{display:grid;gap:12px}
+.paycheck-card{
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:linear-gradient(155deg,rgba(24,32,25,.98),rgba(16,21,17,.98));
+  overflow:hidden;
+}
+.paycheck-head{
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  padding:15px 16px;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+}
+.paycheck-title{font-weight:850;font-size:15px}
+.paycheck-range{font-size:11px;color:var(--muted);margin-top:3px}
+.paycheck-balance{text-align:right}
+.paycheck-balance b{display:block;font-size:16px}
+.paycheck-balance span{font-size:10px;color:var(--muted)}
+.paycheck-body{display:none;padding:0 16px 15px}
+.paycheck-card.open .paycheck-body{display:block}
+.ledger-group{margin-top:12px}
+.ledger-group-title{
+  font-size:10px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:5px;
+}
+.ledger-line{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  padding:8px 0;
+  border-top:1px solid var(--line);
+  font-size:12px;
+}
+.ledger-line:first-of-type{border-top:0}
+.ledger-line small{color:var(--muted)}
+.ledger-total{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  font-weight:800;
+}
+.paycheck-arrow{color:var(--muted);font-size:18px;transition:.2s}
+.paycheck-card.open .paycheck-arrow{transform:rotate(180deg)}
+@media(max-width:760px){
+  .paycheck-head{padding:14px}
+  .paycheck-title{font-size:14px}
+  .paycheck-balance b{font-size:15px}
+}
+
 </style>
 </head>
 <body>
@@ -246,6 +309,7 @@ canvas{display:block;width:100%;height:280px}
   <div class="navlist">
     <button class="navlink active" data-target="overview">◉ Overview</button>
     <button class="navlink" data-target="calendarSection">▦ Calendar</button>
+<button class="navlink" data-target="paychecks">▤ Paychecks</button>
     <button class="navlink" data-target="goals">◎ Goals</button>
     <button class="navlink" data-target="settings">⚙ Settings</button>
   </div>
@@ -263,7 +327,7 @@ canvas{display:block;width:100%;height:280px}
 
 <main class="main">
   <div class="topbar">
-    <div><h2>Financial command center</h2><p>Every paycheck has a job.</p></div>
+    <div><h2>Paycheck-by-paycheck plan</h2><p>Every check shows exactly what gets paid.</p></div>
     <div class="actions">
       <button class="btn" id="todayBtn">Today</button>
       <button class="btn" id="resetBtn">Reset plan</button>
@@ -318,7 +382,18 @@ canvas{display:block;width:100%;height:280px}
     </div>
   </section>
 
-  <section class="section" id="settings">
+  
+<section class="section paycheck-section" id="paychecks">
+  <div class="section-head">
+    <div>
+      <h3>Paycheck-by-paycheck ledger</h3>
+      <p>Each check shows exactly what it funds and what remains.</p>
+    </div>
+  </div>
+  <div class="paycheck-list" id="paycheckList"></div>
+</section>
+
+<section class="section" id="settings">
     <div class="card settings">
       <div class="section-head"><div><h3>Plan settings</h3><p>Changes recalculate the entire dashboard and save in your browser.</p></div></div>
       <div class="form-grid" id="settingsForm"></div>
@@ -541,7 +616,7 @@ function render(){
  const active=state.goals.find(g=>g.remaining>0);
  $('#currentFocus').textContent=active?active.label:'Debt free';
  $('#currentFocusSub').textContent=active?`${money(active.remaining)} remaining`:'All goals completed';
- renderCashflow(next);renderMilestones();renderKeyDates();renderChart();renderCalendar();renderSettings();
+ renderCashflow(next);renderMilestones();renderKeyDates();renderChart();renderCalendar();renderPaychecks();renderSettings();
 }
 function renderCashflow(next){
  const p=state.periods.find(x=>same(x.payday,next))||state.periods[0];
@@ -647,6 +722,66 @@ function openDay(date,ev){
  $('#modalDetails').innerHTML=ev.length?ev.map(e=>`<div class="detail"><span>${e.name}</span><strong>${money(e.amount)}</strong></div>`).join(''):'<p style="color:var(--muted)">No scheduled activity.</p>';
  $('#dayModal').classList.add('open')
 }
+
+function renderPaychecks(){
+ const list=document.getElementById('paycheckList');
+ list.innerHTML=state.periods.map((p,i)=>{
+  const endDate=addDays(p.end,-1);
+  const endingColor=p.carryOut<0?'var(--red)':'var(--mint)';
+  const bills=p.billItems.map(x=>`<div class="ledger-line"><span>${x.name}<br><small>Due ${fmt(x.date,{month:'short',day:'numeric'})}</small></span><strong>−${money(x.amount)}</strong></div>`).join('');
+  const living=p.livingItems.map(x=>`<div class="ledger-line"><span>${x.name}<br><small>${fmt(x.date,{month:'short',day:'numeric'})}</small></span><strong>−${money(x.amount)}</strong></div>`).join('');
+  const allocations=p.allocations.map(x=>`<div class="ledger-line"><span>${x.label}</span><strong>−${money(x.amount)}</strong></div>`).join('');
+  return `<div class="paycheck-card ${i===0?'open':''}">
+    <button class="paycheck-head" type="button">
+      <div>
+        <div class="paycheck-title">${fmt(p.payday,{weekday:'short',month:'short',day:'numeric',year:'numeric'})} paycheck</div>
+        <div class="paycheck-range">Covers ${fmt(p.start,{month:'short',day:'numeric'})}–${fmt(endDate,{month:'short',day:'numeric'})}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="paycheck-balance"><b style="color:${endingColor}">${money(p.carryOut)}</b><span>ending balance</span></div>
+        <span class="paycheck-arrow">⌄</span>
+      </div>
+    </button>
+    <div class="paycheck-body">
+      <div class="ledger-group">
+        <div class="ledger-group-title">Money available</div>
+        <div class="ledger-line"><span>Paycheck income</span><strong style="color:var(--mint)">+${money(p.income)}</strong></div>
+        <div class="ledger-line"><span>Carry from prior paycheck</span><strong style="color:${p.carryIn<0?'var(--red)':'var(--blue)'}">${p.carryIn>=0?'+':''}${money(p.carryIn)}</strong></div>
+      </div>
+
+      <div class="ledger-group">
+        <div class="ledger-group-title">Fixed bills</div>
+        ${bills || '<div class="ledger-line"><span>No fixed bills</span><strong>$0</strong></div>'}
+      </div>
+
+      <div class="ledger-group">
+        <div class="ledger-group-title">Groceries and gas</div>
+        ${living || '<div class="ledger-line"><span>No living expenses</span><strong>$0</strong></div>'}
+      </div>
+
+      <div class="ledger-group">
+        <div class="ledger-group-title">Flex money</div>
+        <div class="ledger-line"><span>Flex allocation</span><strong>−${money(p.flex)}</strong></div>
+      </div>
+
+      <div class="ledger-group">
+        <div class="ledger-group-title">Debt and savings</div>
+        ${allocations || '<div class="ledger-line"><span>No extra allocation</span><strong>$0</strong></div>'}
+      </div>
+
+      <div class="ledger-total">
+        <span>Ending balance</span>
+        <strong style="color:${endingColor}">${money(p.carryOut)}</strong>
+      </div>
+    </div>
+  </div>`;
+ }).join('');
+
+ list.querySelectorAll('.paycheck-head').forEach(btn=>{
+  btn.addEventListener('click',()=>btn.closest('.paycheck-card').classList.toggle('open'));
+ });
+}
+
 function renderSettings(){
  const fields=[
   ['income','Paycheck income'],['flex','Flex per check'],['rent','Monthly rent'],['zales','Monthly Zales'],['amex','Monthly Amex'],
