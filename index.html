@@ -398,7 +398,7 @@ canvas{display:block;width:100%;height:280px}
       <div class="section-head"><div><h3>Plan settings</h3><p>Changes recalculate the entire dashboard and save in your browser.</p></div></div>
       <div class="form-grid" id="settingsForm"></div>
       <div style="margin-top:14px"><button class="btn primary" id="applySettings">Apply changes</button></div>
-      <div class="footer-note">Paycheck accounting: every bill is funded by the paycheck whose pay period contains its due date. Shortfalls carry into the next paycheck, and no flex or extra debt payment is made while a paycheck is negative. The July 2026 car payment is $388 on July 29; the regular $600 monthly car payment resumes afterward. July personal-debt payments remain paused; the existing loan payment and savings seed occur once on July 15.</div>
+      <div class="footer-note">Paycheck accounting: every bill is funded by the paycheck whose pay period contains its due date. For July 2026 only, the car ($388), rent, and Zales are all scheduled on July 29. Shortfalls carry into the next paycheck, and no flex or extra debt payment is made while a paycheck is negative. The July 2026 car payment is $388 on July 29; the regular $600 monthly car payment resumes afterward. July personal-debt payments remain paused; the existing loan payment and savings seed occur once on July 15.</div>
     </div>
   </section>
 </main>
@@ -487,6 +487,15 @@ function buildPlan(){
  // Every item belongs to exactly one paycheck: the paycheck on or before
  // the due date whose pay period contains that date.
  items.forEach(it=>{
+  // Special handling for July 2026:
+  // Rent, Zales, and the reduced $388 car payment are all funded by
+  // the July 29 paycheck.
+  if(it.name==='Rent' && it.date.getFullYear()===2026 && it.date.getMonth()===6){
+    it.date=new Date(2026,6,29);
+  }
+  if(it.name==='Zales' && it.date.getFullYear()===2026 && it.date.getMonth()===6){
+    it.date=new Date(2026,6,29);
+  }
   if(it.periodIndex==null)it.periodIndex=findPeriod(it.date);
  });
  periods.forEach(p=>p.items=items.filter(i=>i.periodIndex===p.index));
