@@ -310,6 +310,7 @@ canvas{display:block;width:100%;height:280px}
       </div>
       <div class="month-summary" id="monthSummary"></div>
       <div class="calendar" id="calendar"></div>
+<div class="footer-note" style="margin:2px 0 12px"><b style="color:var(--text)">Pay-period rule:</b> a paycheck covers bills due from that payday through the day before the next payday. Negative balances carry forward.</div>
 <div class="mobile-agenda" id="mobileAgenda">
   <h4 id="agendaTitle">Selected day</h4>
   <div id="agendaItems"></div>
@@ -322,7 +323,7 @@ canvas{display:block;width:100%;height:280px}
       <div class="section-head"><div><h3>Plan settings</h3><p>Changes recalculate the entire dashboard and save in your browser.</p></div></div>
       <div class="form-grid" id="settingsForm"></div>
       <div style="margin-top:14px"><button class="btn primary" id="applySettings">Apply changes</button></div>
-      <div class="footer-note">Assumptions retained from your original plan: July personal-debt payments are paused; the first Car, Rent, and Zales payments are funded by the July 29 check; the existing loan payment and savings seed occur once on July 15.</div>
+      <div class="footer-note">Paycheck accounting: every bill is funded by the paycheck whose pay period contains its due date. Shortfalls carry into the next paycheck, and no flex or extra debt payment is made while a paycheck is negative. The July 2026 car payment is $388 on July 29; the regular $600 monthly car payment resumes afterward. July personal-debt payments remain paused; the existing loan payment and savings seed occur once on July 15.</div>
     </div>
   </section>
 </main>
@@ -356,33 +357,65 @@ const fmt=(d,opt={month:'short',day:'numeric',year:'numeric'})=>d.toLocaleDateSt
 function buildPlan(){
  const START=parseDate(cfg.start),END=parseDate(cfg.end);
  const paydays=[];for(let d=new Date(START);d<=END;d=addDays(d,cfg.payEvery))paydays.push(new Date(d));
- const periods=paydays.map((p,i)=>({index:i,payday:p,start:p,end:i+1<paydays.length?paydays[i+1]:addDays(p,cfg.payEvery),income:+cfg.income,items:[],allocations:[]}));
+ const periods=paydays.map((p,i)=>({
+   index:i,payday:p,start:p,
+   end:i+1<paydays.length?paydays[i+1]:addDays(p,cfg.payEvery),
+   income:+cfg.income,items:[],allocations:[],carryIn:0,carryOut:0
+ }));
  const findPeriod=date=>periods.findIndex(p=>date>=p.start&&date<p.end);
  const items=[];
+
  function addMonthly(name,day,amount,startYM='0000-00',type='bill'){
   let d=new Date(START.getFullYear(),START.getMonth(),1);
-  while(d<=END){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(ym>=startYM)items.push({name,date:new Date(d.getFullYear(),d.getMonth(),day),amount:+amount,type});d.setMonth(d.getMonth()+1)}
+  while(d<=END){
+   const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+   if(ym>=startYM)items.push({name,date:new Date(d.getFullYear(),d.getMonth(),day),amount:+amount,type});
+   d.setMonth(d.getMonth()+1);
+  }
  }
- addMonthly('Rent',25,cfg.rent);addMonthly('Zales',28,cfg.zales);addMonthly('Amex',21,cfg.amex);addMonthly('Insurance',5,cfg.insurance,cfg.insuranceStart);
+
+ addMonthly('Rent',25,cfg.rent);
+ addMonthly('Zales',28,cfg.zales);
+ addMonthly('Amex',21,cfg.amex);
+ addMonthly('Insurance',5,cfg.insurance,cfg.insuranceStart);
+
  let carRemaining=+cfg.carBalance,carPayoffDate=null;
  let d=new Date(START.getFullYear(),START.getMonth(),1);
  while(d<=END){
-  const due=new Date(d.getFullYear(),d.getMonth(),17);
-  if(carRemaining>0){const pay=Math.min(+cfg.carPayment,carRemaining);carRemaining-=pay;items.push({name:'Car',date:due,amount:pay,type:'bill'});if(carRemaining<=0)carPayoffDate=due}
-  else items.push({name:'Car freed',date:due,amount:+cfg.carPayment,type:'setaside'});
-  d.setMonth(d.getMonth()+1)
+  const isJuly2026=d.getFullYear()===2026&&d.getMonth()===6;
+  const due=isJuly2026
+   ? new Date(2026,6,29)
+   : new Date(d.getFullYear(),d.getMonth(),17);
+
+  if(carRemaining>0){
+   const scheduledPayment=isJuly2026?388:+cfg.carPayment;
+   const pay=Math.min(scheduledPayment,carRemaining);
+   carRemaining-=pay;
+   items.push({name:'Car',date:due,amount:pay,type:'bill'});
+   if(carRemaining<=0)carPayoffDate=due;
+  }else{
+   // This is not a bill. It is a dedicated allocation from the paycheck
+   // whose period contains the former car due date.
+   items.push({name:'Car freed',date:due,amount:+cfg.carPayment,type:'setaside'});
+  }
+  d.setMonth(d.getMonth()+1);
  }
+
  for(let w=new Date(START);w<=END;w=addDays(w,7)){
   items.push({name:'Groceries',date:new Date(w),amount:+cfg.groceriesWeekly,type:'living'});
   items.push({name:'Gas',date:new Date(w),amount:+cfg.gasWeekly,type:'living'});
  }
+
  items.push({name:'Existing loan payment',date:new Date(START),amount:+cfg.existingLoan,type:'bill',periodIndex:0});
  items.push({name:'Savings seed',date:new Date(START),amount:+cfg.savingsSeed,type:'bill',periodIndex:0,isSavingsSeed:true});
+
+ // Every item belongs to exactly one paycheck: the paycheck on or before
+ // the due date whose pay period contains that date.
  items.forEach(it=>{
   if(it.periodIndex==null)it.periodIndex=findPeriod(it.date);
-  if(it.date.getFullYear()===2026&&it.date.getMonth()===6&&['Car','Rent','Zales'].includes(it.name)){it.periodIndex=1;it.deferred=true}
  });
  periods.forEach(p=>p.items=items.filter(i=>i.periodIndex===p.index));
+
  const goals=[
   {key:'sary',label:'Sary',target:+cfg.sary,remaining:+cfg.sary,stage:1},
   {key:'mom',label:'Mom',target:+cfg.mom,remaining:+cfg.mom,stage:2},
@@ -392,36 +425,106 @@ function buildPlan(){
  ];
  const [sary,mom,dallis,buffer,big]=goals;
  const debtSnapshots=[];
+ let carry=0;
+
  periods.forEach(p=>{
-  const normal=p.items.filter(i=>i.type!=='setaside').reduce((s,i)=>s+i.amount,0);
-  const setaside=p.items.filter(i=>i.type==='setaside').reduce((s,i)=>s+i.amount,0);
-  p.outflow=normal+setaside;p.leftover=p.income-p.outflow;
-  let amt=Math.max(p.leftover,0);p.flex=Math.min(+cfg.flex,amt);amt-=p.flex;
+  p.carryIn=carry;
+
+  // Real cash expenses only. "Car freed" is an allocation, not a bill.
+  p.billItems=p.items.filter(i=>i.type==='bill');
+  p.livingItems=p.items.filter(i=>i.type==='living');
+  p.setasideItems=p.items.filter(i=>i.type==='setaside');
+  p.billsTotal=p.billItems.reduce((s,i)=>s+i.amount,0);
+  p.livingTotal=p.livingItems.reduce((s,i)=>s+i.amount,0);
+  p.outflow=p.billsTotal+p.livingTotal;
+
+  let available=p.income+p.carryIn-p.outflow;
+  p.availableBeforeFlex=available;
+
+  // A shortage is carried to the next paycheck. No flex or payoff spending
+  // is allowed while the period is negative.
+  if(available<0){
+   p.flex=0;
+   p.carryOut=available;
+   p.unallocated=0;
+   carry=p.carryOut;
+   debtSnapshots.push({date:new Date(p.payday),remaining:sary.remaining+mom.remaining+dallis.remaining+big.remaining});
+   return;
+  }
+
+  p.flex=Math.min(+cfg.flex,available);
+  available-=p.flex;
+
   const july=p.payday.getFullYear()===2026&&p.payday.getMonth()===6;
-  function apply(goal,label=goal.label,available=amt){
-    const val=Math.min(available,goal.remaining);goal.remaining-=val;if(val>0)p.allocations.push({label,amount:val,type:goal.key==='buffer'?'save':'debt'});
-    if(goal.remaining===0&&!goal.doneDate)goal.doneDate=new Date(p.payday);return val
+
+  function allocate(goal,amount,label=goal.label,type=goal.key==='buffer'?'save':'debt'){
+   const applied=Math.min(amount,goal.remaining);
+   goal.remaining-=applied;
+   if(applied>0)p.allocations.push({label,amount:applied,type});
+   if(goal.remaining===0&&!goal.doneDate)goal.doneDate=new Date(p.payday);
+   return applied;
   }
-  if(!july&&sary.remaining>0)amt-=apply(sary);
-  if(!july&&amt>0&&(mom.remaining>0||dallis.remaining>0)){
-    const pool=amt,half=pool/2;let ma=Math.min(half,mom.remaining),da=Math.min(half,dallis.remaining),spare=pool-ma-da;
-    if(spare>0&&mom.remaining-ma>0){let x=Math.min(spare,mom.remaining-ma);ma+=x;spare-=x}
-    if(spare>0&&dallis.remaining-da>0){let x=Math.min(spare,dallis.remaining-da);da+=x;spare-=x}
-    mom.remaining-=ma;dallis.remaining-=da;amt-=ma+da;
-    if(ma)p.allocations.push({label:'Mom',amount:ma,type:'debt'});if(da)p.allocations.push({label:'Dallis',amount:da,type:'debt'});
-    if(!mom.remaining&&!mom.doneDate)mom.doneDate=new Date(p.payday);if(!dallis.remaining&&!dallis.doneDate)dallis.doneDate=new Date(p.payday)
+
+  // Once the car is paid off, reserve that former payment from the exact
+  // paycheck period containing the old due date. It bypasses earlier goals.
+  const requestedCarRedirect=p.setasideItems.reduce((s,i)=>s+i.amount,0);
+  p.carRedirect=Math.min(requestedCarRedirect,available);
+  if(p.carRedirect>0){
+   let redirect=p.carRedirect;
+   if(big.remaining>0){
+    const applied=allocate(big,redirect,'General debt (car)','debt');
+    redirect-=applied;
+   }
+   if(redirect>0)p.allocations.push({label:'Savings (car)',amount:redirect,type:'save'});
+   available-=p.carRedirect;
   }
-  if(amt>0&&buffer.remaining>0)amt-=apply(buffer);
-  if(amt>0&&big.remaining>0)amt-=apply(big);
-  let freed=setaside;
-  if(freed>0&&big.remaining>0){const a=Math.min(freed,big.remaining);big.remaining-=a;freed-=a;p.allocations.push({label:'General debt (car)',amount:a,type:'debt'});if(!big.remaining&&!big.doneDate)big.doneDate=new Date(p.payday)}
-  if(freed>0)p.allocations.push({label:'Savings (car)',amount:freed,type:'save'});
-  p.unallocated=amt;
+
+  // July personal-debt payments remain paused, matching the original plan.
+  if(!july&&available>0&&sary.remaining>0){
+   const used=allocate(sary,available);
+   available-=used;
+  }
+
+  if(!july&&available>0&&(mom.remaining>0||dallis.remaining>0)){
+   const pool=available,half=pool/2;
+   let momApply=Math.min(half,mom.remaining);
+   let dallisApply=Math.min(half,dallis.remaining);
+   let spare=pool-momApply-dallisApply;
+   if(spare>0&&mom.remaining-momApply>0){
+    const extra=Math.min(spare,mom.remaining-momApply);momApply+=extra;spare-=extra;
+   }
+   if(spare>0&&dallis.remaining-dallisApply>0){
+    const extra=Math.min(spare,dallis.remaining-dallisApply);dallisApply+=extra;spare-=extra;
+   }
+   mom.remaining-=momApply;dallis.remaining-=dallisApply;
+   available-=momApply+dallisApply;
+   if(momApply>0)p.allocations.push({label:'Mom',amount:momApply,type:'debt'});
+   if(dallisApply>0)p.allocations.push({label:'Dallis',amount:dallisApply,type:'debt'});
+   if(mom.remaining===0&&!mom.doneDate)mom.doneDate=new Date(p.payday);
+   if(dallis.remaining===0&&!dallis.doneDate)dallis.doneDate=new Date(p.payday);
+  }
+
+  if(available>0&&buffer.remaining>0){
+   const used=allocate(buffer,available);
+   available-=used;
+  }
+
+  if(available>0&&big.remaining>0){
+   const used=allocate(big,available);
+   available-=used;
+  }
+
+  p.unallocated=Math.max(available,0);
+  p.carryOut=p.unallocated;
+  carry=p.carryOut;
   debtSnapshots.push({date:new Date(p.payday),remaining:sary.remaining+mom.remaining+dallis.remaining+big.remaining});
  });
- return {START,END,paydays,periods,items,goals,carPayoffDate,debtFreeDate:big.doneDate,debtSnapshots};
-}
 
+ return {
+  START,END,paydays,periods,items,goals,carPayoffDate,
+  debtFreeDate:big.doneDate,debtSnapshots
+ };
+}
 function render(){
  state=buildPlan();if(!viewDate)viewDate=new Date(state.START);
  $('#planRange').textContent=`${fmt(state.START)} → ${fmt(state.END)} · biweekly, ${money(cfg.income)}/check`;
@@ -441,13 +544,23 @@ function render(){
  renderCashflow(next);renderMilestones();renderKeyDates();renderChart();renderCalendar();renderSettings();
 }
 function renderCashflow(next){
- const p=state.periods.find(x=>same(x.payday,next))||state.periods[0];$('#nextCheckDate').textContent=fmt(p.payday);
+ const p=state.periods.find(x=>same(x.payday,next))||state.periods[0];
+ $('#nextCheckDate').textContent=`${fmt(p.payday)} · funds bills due through ${fmt(addDays(p.end,-1),{month:'short',day:'numeric'})}`;
+ const allocationTotal=p.allocations.reduce((s,a)=>s+a.amount,0);
  const rows=[
-  ['Income',p.income,'var(--mint)'],['Bills & essentials',-p.outflow,'var(--red)'],['Flex money',-p.flex,'var(--blue)'],
-  ['Debt / savings',-p.allocations.reduce((s,a)=>s+a.amount,0),'var(--gold)']
+  ['Paycheck income',p.income,'var(--mint)'],
+  ['Carry from prior check',p.carryIn,p.carryIn<0?'var(--red)':'var(--blue)'],
+  ['Fixed bills',-p.billsTotal,'var(--red)'],
+  ['Groceries & gas',-p.livingTotal,'var(--muted)'],
+  ['Flex money',-p.flex,'var(--blue)'],
+  ['Debt / savings',-allocationTotal,'var(--gold)'],
+  ['Ending balance',p.carryOut,p.carryOut<0?'var(--red)':'var(--mint)']
  ];
  const max=Math.max(...rows.map(r=>Math.abs(r[1])),1);
- $('#cashflowRows').innerHTML=rows.map(r=>`<div class="flow-row"><span>${r[0]}</span><b>${money(r[1])}</b><div class="bar"><i style="width:${Math.abs(r[1])/max*100}%;background:${r[2]}"></i></div></div>`).join('');
+ $('#cashflowRows').innerHTML=rows.map(r=>`<div class="flow-row">
+   <span>${r[0]}</span><b style="color:${r[2]}">${money(r[1])}</b>
+   <div class="bar"><i style="width:${Math.abs(r[1])/max*100}%;background:${r[2]}"></i></div>
+ </div>`).join('');
 }
 function renderMilestones(){
  const activeStage=(state.goals.find(g=>g.remaining>0)||{stage:99}).stage;
@@ -502,8 +615,8 @@ function renderCalendar(){
  const idx=(y-state.START.getFullYear())*12+(m-state.START.getMonth()),total=(state.END.getFullYear()-state.START.getFullYear())*12+(state.END.getMonth()-state.START.getMonth())+1;
  $('#monthIndex').textContent=`Month ${idx+1} of ${total}`;
  const monthPeriods=state.periods.filter(p=>p.payday.getFullYear()===y&&p.payday.getMonth()===m);
- const sumIncome=monthPeriods.reduce((s,p)=>s+p.income,0),sumOut=monthPeriods.reduce((s,p)=>s+p.outflow,0),sumFlex=monthPeriods.reduce((s,p)=>s+p.flex,0),sumAlloc=monthPeriods.reduce((s,p)=>s+p.allocations.reduce((x,a)=>x+a.amount,0),0);
- $('#monthSummary').innerHTML=[['Income',sumIncome],['Bills & essentials',sumOut],['Flex',sumFlex],['Debt / savings',sumAlloc],['Paydays',monthPeriods.length]].map(x=>`<div class="summary-chip"><span>${x[0]}</span><b>${x[0]==='Paydays'?x[1]:money(x[1])}</b></div>`).join('');
+ const sumIncome=monthPeriods.reduce((s,p)=>s+p.income,0),sumOut=monthPeriods.reduce((s,p)=>s+p.outflow,0),sumFlex=monthPeriods.reduce((s,p)=>s+p.flex,0),sumAlloc=monthPeriods.reduce((s,p)=>s+p.allocations.reduce((x,a)=>x+a.amount,0),0),monthEnding=monthPeriods.length?monthPeriods.at(-1).carryOut:0;
+ $('#monthSummary').innerHTML=[['Income',sumIncome],['Bills & essentials',sumOut],['Flex',sumFlex],['Debt / savings',sumAlloc],['Ending balance',monthEnding]].map(x=>`<div class="summary-chip"><span>${x[0]}</span><b style="color:${x[0]==='Ending balance'&&x[1]<0?'var(--red)':'var(--text)'}">${money(x[1])}</b></div>`).join('');
  const cal=$('#calendar');cal.innerHTML=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<div class="dow">${x}</div>`).join('');
  for(let i=0;i<first.getDay();i++)cal.insertAdjacentHTML('beforeend','<div class="day empty"></div>');
  const today=new Date();
