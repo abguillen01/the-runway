@@ -4,21 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0d0b">
-<title>The Runway — Debt Payoff Dashboard</title>
+<title>Budget OS — Debt Payoff Dashboard</title>
 <style>
 :root{
-  --bg:#090c0a;--panel:#121713;--panel2:#182019;--panel3:#202920;
-  --line:#2a352c;--text:#f3efe6;--muted:#98a198;--mint:#88e0a8;
-  --mint2:#315a3f;--red:#ef715b;--red2:#5a3029;--gold:#e4bd6f;
-  --gold2:#5a4826;--blue:#82bce3;--blue2:#284a5d;--purple:#b79ae8;
-  --shadow:0 18px 50px rgba(0,0,0,.25);--radius:18px;
+  --bg:#050a08;--panel:#09130f;--panel2:#0d1b15;--panel3:#13251b;
+  --line:#1e3a2a;--text:#f4fff6;--muted:#83968a;--mint:#86f29d;
+  --mint2:#1d5a31;--red:#ff7f73;--red2:#51251f;--gold:#86f29d;
+  --gold2:#183f25;--blue:#76c7ff;--blue2:#173d52;--purple:#b89cff;
+  --shadow:0 18px 55px rgba(0,0,0,.34);--radius:18px;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:
- radial-gradient(circle at 10% 0%,rgba(136,224,168,.07),transparent 28rem),
- radial-gradient(circle at 100% 0%,rgba(228,189,111,.06),transparent 26rem),
- var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+ radial-gradient(circle at 12% 0%,rgba(134,242,157,.10),transparent 30rem),
+ radial-gradient(circle at 100% 0%,rgba(58,145,83,.12),transparent 28rem),
+ linear-gradient(180deg,#07110d,var(--bg));color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 button,input,select{font:inherit}
 button{cursor:pointer}
 .app{min-height:100vh;display:grid;grid-template-columns:290px minmax(0,1fr)}
@@ -41,7 +41,7 @@ button{cursor:pointer}
 .actions{display:flex;gap:10px}
 .btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 14px;border-radius:12px}
 .btn:hover{border-color:var(--gold);color:var(--gold)}
-.btn.primary{background:var(--gold);color:#1b160b;border-color:var(--gold);font-weight:800}
+.btn.primary{background:var(--mint);color:#07110d;border-color:var(--mint);font-weight:900}
 .grid{display:grid;gap:16px}
 .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
 .card{background:linear-gradient(155deg,rgba(24,32,25,.98),rgba(16,21,17,.98));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -302,9 +302,9 @@ canvas{display:block;width:100%;height:280px}
 <div class="app">
 <aside class="sidebar">
   <div class="brand">
-    <small>Ledger · Payoff Plan</small>
-    <h1>The Runway</h1>
-    <p id="planRange">18-month debt payoff dashboard</p>
+    <small>Budget · Payoff Plan</small>
+    <h1>Budget OS</h1>
+    <p id="planRange">Paycheck-by-paycheck debt payoff dashboard</p>
   </div>
   <div class="navlist">
     <button class="navlink active" data-target="overview">◉ Overview</button>
@@ -320,7 +320,7 @@ canvas{display:block;width:100%;height:280px}
   </div>
   <div class="side-card">
     <div class="eyebrow">Current focus</div>
-    <strong id="currentFocus" style="font-size:18px;color:var(--gold)">—</strong>
+    <strong id="currentFocus" style="font-size:18px;color:var(--mint)">—</strong>
     <p id="currentFocusSub" style="font-size:12px;color:var(--muted);margin:7px 0 0"></p>
   </div>
 </aside>
@@ -340,7 +340,7 @@ canvas{display:block;width:100%;height:280px}
       <div class="card stat"><div class="label">Next payday</div><div class="value accent-mint" id="nextPayday">—</div><div class="sub" id="nextPaySub"></div></div>
       <div class="card stat"><div class="label">Debt remaining</div><div class="value accent-red" id="debtRemaining">—</div><div class="sub" id="debtPaidSub"></div></div>
       <div class="card stat"><div class="label">Debt-free estimate</div><div class="value accent-gold" id="debtFree">—</div><div class="sub">Based on the current plan</div></div>
-      <div class="card stat"><div class="label">Car payoff</div><div class="value accent-blue" id="carPaid">—</div><div class="sub">$600/month redirected afterward</div></div>
+      <div class="card stat"><div class="label">Car payoff</div><div class="value accent-blue" id="carPaid">—</div><div class="sub">Car payment rolls into debt afterward</div></div>
     </div>
 
     <div class="grid two-col section">
@@ -357,7 +357,7 @@ canvas{display:block;width:100%;height:280px}
 
   <section class="grid two-col section" id="goals">
     <div class="card milestones">
-      <div class="section-head"><div><h3>Payoff milestones</h3><p>Sary → Mom & Dallis → Buffer → General debt</p></div></div>
+      <div class="section-head"><div><h3>Payoff milestones</h3><p>Sary → Mom → Insurance buffer → Car → General debt</p></div></div>
       <div class="timeline" id="milestoneList"></div>
     </div>
     <div class="card milestones">
@@ -398,7 +398,7 @@ canvas{display:block;width:100%;height:280px}
       <div class="section-head"><div><h3>Plan settings</h3><p>Changes recalculate the entire dashboard and save in your browser.</p></div></div>
       <div class="form-grid" id="settingsForm"></div>
       <div style="margin-top:14px"><button class="btn primary" id="applySettings">Apply changes</button></div>
-      <div class="footer-note">Paycheck accounting: every bill is funded by the paycheck whose pay period contains its due date. For July 2026 only, the car ($388), rent, and Zales are all scheduled on July 29. Shortfalls carry into the next paycheck, and no flex or extra debt payment is made while a paycheck is negative. The July 2026 car payment is $388 on July 29; the regular $600 monthly car payment resumes afterward. July personal-debt payments remain paused; the existing loan payment and savings seed occur once on July 15.</div>
+      <div class="footer-note">Paycheck accounting: every bill is funded by the paycheck whose pay period contains its due date. For July 2026 only, the car, rent, and Zales are all scheduled on July 29. Shortfalls carry into the next paycheck, and no flex or extra debt payment is made while a paycheck is negative. The July 2026 car payment is scheduled on July 29; the regular monthly payment continues afterward. The plan starts on July 29, 2026. After Sary and Mom are paid, the plan builds the insurance buffer to $1,000. After that, all available payoff money goes to the car, then to general debt.</div>
     </div>
   </section>
 </main>
@@ -413,13 +413,13 @@ canvas{display:block;width:100%;height:280px}
 
 <script>
 const DEFAULTS={
-  start:'2026-07-15',end:'2028-01-15',income:1600,payEvery:14,flex:200,
-  rent:500,zales:150,amex:55,insurance:250,insuranceStart:'2026-09',
-  carBalance:6200,carPayment:600,groceriesWeekly:62.5,gasWeekly:50,
-  sary:490,mom:2300,dallis:1600,buffer:1500,bigDebt:14000,
-  existingLoan:550,savingsSeed:400
+  start:'2026-07-29',end:'2027-12-31',income:1600,payEvery:14,flex:300,
+  rent:500,zales:115,amex:55,insurance:250,insuranceStart:'2026-09',
+  carBalance:6200,carPayment:400,groceriesWeekly:50,gasWeekly:50,
+  sary:490,mom:2300,buffer:1000,bigDebt:14000,
+  existingLoan:0,savingsSeed:0
 };
-let cfg={...DEFAULTS,...JSON.parse(localStorage.getItem('runwayConfig')||'{}')};
+let cfg={...DEFAULTS,...JSON.parse(localStorage.getItem('budgetOSConfig2026')||'{}')};
 let state=null,viewDate=null,selectedDate=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const money=n=>(n<0?'-':'')+'$'+Math.abs(Math.round(n)).toLocaleString();
@@ -454,25 +454,14 @@ function buildPlan(){
  addMonthly('Amex',21,cfg.amex);
  addMonthly('Insurance',5,cfg.insurance,cfg.insuranceStart);
 
- let carRemaining=+cfg.carBalance,carPayoffDate=null;
+ let carPayoffDate=null;
  let d=new Date(START.getFullYear(),START.getMonth(),1);
  while(d<=END){
   const isJuly2026=d.getFullYear()===2026&&d.getMonth()===6;
   const due=isJuly2026
    ? new Date(2026,6,29)
    : new Date(d.getFullYear(),d.getMonth(),17);
-
-  if(carRemaining>0){
-   const scheduledPayment=isJuly2026?388:+cfg.carPayment;
-   const pay=Math.min(scheduledPayment,carRemaining);
-   carRemaining-=pay;
-   items.push({name:'Car',date:due,amount:pay,type:'bill'});
-   if(carRemaining<=0)carPayoffDate=due;
-  }else{
-   // This is not a bill. It is a dedicated allocation from the paycheck
-   // whose period contains the former car due date.
-   items.push({name:'Car freed',date:due,amount:+cfg.carPayment,type:'setaside'});
-  }
+  items.push({name:'Car',date:due,amount:+cfg.carPayment,type:'bill'});
   d.setMonth(d.getMonth()+1);
  }
 
@@ -481,14 +470,14 @@ function buildPlan(){
   items.push({name:'Gas',date:new Date(w),amount:+cfg.gasWeekly,type:'living'});
  }
 
- items.push({name:'Existing loan payment',date:new Date(START),amount:+cfg.existingLoan,type:'bill',periodIndex:0});
- items.push({name:'Savings seed',date:new Date(START),amount:+cfg.savingsSeed,type:'bill',periodIndex:0,isSavingsSeed:true});
+ if(+cfg.existingLoan>0)items.push({name:'Existing loan payment',date:new Date(START),amount:+cfg.existingLoan,type:'bill',periodIndex:0});
+ if(+cfg.savingsSeed>0)items.push({name:'Savings seed',date:new Date(START),amount:+cfg.savingsSeed,type:'bill',periodIndex:0,isSavingsSeed:true});
 
  // Every item belongs to exactly one paycheck: the paycheck on or before
  // the due date whose pay period contains that date.
  items.forEach(it=>{
   // Special handling for July 2026:
-  // Rent, Zales, and the reduced $388 car payment are all funded by
+  // Rent, Zales, and the car payment are all funded by
   // the July 29 paycheck.
   if(it.name==='Rent' && it.date.getFullYear()===2026 && it.date.getMonth()===6){
     it.date=new Date(2026,6,29);
@@ -503,11 +492,11 @@ function buildPlan(){
  const goals=[
   {key:'sary',label:'Sary',target:+cfg.sary,remaining:+cfg.sary,stage:1},
   {key:'mom',label:'Mom',target:+cfg.mom,remaining:+cfg.mom,stage:2},
-  {key:'dallis',label:'Dallis',target:+cfg.dallis,remaining:+cfg.dallis,stage:2},
-  {key:'buffer',label:'Savings buffer',target:+cfg.buffer,remaining:Math.max(+cfg.buffer-+cfg.savingsSeed,0),stage:3,prefunded:+cfg.savingsSeed},
-  {key:'big',label:'General debt',target:+cfg.bigDebt,remaining:+cfg.bigDebt,stage:4}
+  {key:'buffer',label:'Insurance buffer',target:+cfg.buffer,remaining:Math.max(+cfg.buffer-+cfg.savingsSeed,0),stage:3,prefunded:+cfg.savingsSeed},
+  {key:'car',label:'Car',target:+cfg.carBalance,remaining:+cfg.carBalance,stage:4},
+  {key:'big',label:'General debt',target:+cfg.bigDebt,remaining:+cfg.bigDebt,stage:5}
  ];
- const [sary,mom,dallis,buffer,big]=goals;
+ const [sary,mom,buffer,car,big]=goals;
  const debtSnapshots=[];
  let carry=0;
 
@@ -515,9 +504,16 @@ function buildPlan(){
   p.carryIn=carry;
 
   // Real cash expenses only. "Car freed" is an allocation, not a bill.
-  p.billItems=p.items.filter(i=>i.type==='bill');
+  p.billItems=p.items.filter(i=>i.type==='bill').map(i=>{
+   if(i.name!=='Car')return {...i};
+   if(car.remaining<=0)return {...i,amount:0};
+   const paid=Math.min(i.amount,car.remaining);
+   car.remaining-=paid;
+   if(car.remaining<=0&&!carPayoffDate)carPayoffDate=new Date(p.payday);
+   return {...i,amount:paid};
+  }).filter(i=>i.amount>0);
   p.livingItems=p.items.filter(i=>i.type==='living');
-  p.setasideItems=p.items.filter(i=>i.type==='setaside');
+  p.setasideItems=[];
   p.billsTotal=p.billItems.reduce((s,i)=>s+i.amount,0);
   p.livingTotal=p.livingItems.reduce((s,i)=>s+i.amount,0);
   p.outflow=p.billsTotal+p.livingTotal;
@@ -532,7 +528,7 @@ function buildPlan(){
    p.carryOut=available;
    p.unallocated=0;
    carry=p.carryOut;
-   debtSnapshots.push({date:new Date(p.payday),remaining:sary.remaining+mom.remaining+dallis.remaining+big.remaining});
+   debtSnapshots.push({date:new Date(p.payday),remaining:sary.remaining+mom.remaining+car.remaining+big.remaining});
    return;
   }
 
@@ -549,48 +545,27 @@ function buildPlan(){
    return applied;
   }
 
-  // Once the car is paid off, reserve that former payment from the exact
-  // paycheck period containing the old due date. It bypasses earlier goals.
-  const requestedCarRedirect=p.setasideItems.reduce((s,i)=>s+i.amount,0);
-  p.carRedirect=Math.min(requestedCarRedirect,available);
-  if(p.carRedirect>0){
-   let redirect=p.carRedirect;
-   if(big.remaining>0){
-    const applied=allocate(big,redirect,'General debt (car)','debt');
-    redirect-=applied;
-   }
-   if(redirect>0)p.allocations.push({label:'Savings (car)',amount:redirect,type:'save'});
-   available-=p.carRedirect;
-  }
 
-  // July personal-debt payments remain paused, matching the original plan.
-  if(!july&&available>0&&sary.remaining>0){
+  // Personal-debt payoff begins immediately with the July 29, 2026 paycheck.
+  if(available>0&&sary.remaining>0){
    const used=allocate(sary,available);
    available-=used;
   }
 
-  if(!july&&available>0&&(mom.remaining>0||dallis.remaining>0)){
-   const pool=available,half=pool/2;
-   let momApply=Math.min(half,mom.remaining);
-   let dallisApply=Math.min(half,dallis.remaining);
-   let spare=pool-momApply-dallisApply;
-   if(spare>0&&mom.remaining-momApply>0){
-    const extra=Math.min(spare,mom.remaining-momApply);momApply+=extra;spare-=extra;
-   }
-   if(spare>0&&dallis.remaining-dallisApply>0){
-    const extra=Math.min(spare,dallis.remaining-dallisApply);dallisApply+=extra;spare-=extra;
-   }
-   mom.remaining-=momApply;dallis.remaining-=dallisApply;
-   available-=momApply+dallisApply;
-   if(momApply>0)p.allocations.push({label:'Mom',amount:momApply,type:'debt'});
-   if(dallisApply>0)p.allocations.push({label:'Dallis',amount:dallisApply,type:'debt'});
-   if(mom.remaining===0&&!mom.doneDate)mom.doneDate=new Date(p.payday);
-   if(dallis.remaining===0&&!dallis.doneDate)dallis.doneDate=new Date(p.payday);
+  if(available>0&&mom.remaining>0){
+   const used=allocate(mom,available);
+   available-=used;
   }
 
   if(available>0&&buffer.remaining>0){
-   const used=allocate(buffer,available);
+   const used=allocate(buffer,available,'Insurance buffer','save');
    available-=used;
+  }
+
+  if(available>0&&car.remaining>0){
+   const used=allocate(car,available,'Car extra','debt');
+   available-=used;
+   if(car.remaining===0&&!carPayoffDate)carPayoffDate=new Date(p.payday);
   }
 
   if(available>0&&big.remaining>0){
@@ -601,7 +576,7 @@ function buildPlan(){
   p.unallocated=Math.max(available,0);
   p.carryOut=p.unallocated;
   carry=p.carryOut;
-  debtSnapshots.push({date:new Date(p.payday),remaining:sary.remaining+mom.remaining+dallis.remaining+big.remaining});
+  debtSnapshots.push({date:new Date(p.payday),remaining:sary.remaining+mom.remaining+car.remaining+big.remaining});
  });
 
  return {
@@ -656,8 +631,10 @@ function renderMilestones(){
 function renderKeyDates(){
  const keys=[
   ['Plan begins',state.START,'First scheduled payday'],
-  ['Car paid off',state.carPayoffDate,'$600/month redirected'],
-  ['Savings buffer complete',state.goals.find(g=>g.key==='buffer').doneDate,'Emergency cushion funded'],
+  ['Sary paid off',state.goals.find(g=>g.key==='sary').doneDate,'Personal debt cleared'],
+  ['Mom paid off',state.goals.find(g=>g.key==='mom').doneDate,'Personal debt cleared'],
+  ['Insurance buffer complete',state.goals.find(g=>g.key==='buffer').doneDate,'$1,000 insurance cushion funded'],
+  ['Car paid off',state.carPayoffDate,'$400/month redirected'],
   ['Debt-free estimate',state.debtFreeDate,'General debt reaches $0']
  ];
  $('#keyDates').innerHTML=keys.map((k,i)=>`<div class="mile ${k[1]?'done':''}"><span class="dot"></span><div><h4>${k[0]}</h4><p>${k[2]}</p></div><div class="amt"><strong>${k[1]?fmt(k[1],{month:'short',day:'numeric',year:'numeric'}):'After plan'}</strong></div></div>`).join('');
@@ -795,12 +772,12 @@ function renderSettings(){
  const fields=[
   ['income','Paycheck income'],['flex','Flex per check'],['rent','Monthly rent'],['zales','Monthly Zales'],['amex','Monthly Amex'],
   ['insurance','Monthly insurance'],['carBalance','Car balance'],['carPayment','Car payment'],['groceriesWeekly','Weekly groceries'],
-  ['gasWeekly','Weekly gas'],['sary','Sary balance'],['mom','Mom balance'],['dallis','Dallis balance'],['buffer','Savings buffer'],['bigDebt','General debt']
+  ['gasWeekly','Weekly gas'],['sary','Sary balance'],['mom','Mom balance'],['buffer','Insurance buffer'],['bigDebt','General debt']
  ];
  $('#settingsForm').innerHTML=fields.map(([k,l])=>`<div class="field"><label>${l}</label><input type="number" step="0.01" data-key="${k}" value="${cfg[k]}"></div>`).join('');
 }
-$('#applySettings').onclick=()=>{$$('#settingsForm input').forEach(i=>cfg[i.dataset.key]=+i.value);localStorage.setItem('runwayConfig',JSON.stringify(cfg));render()};
-$('#resetBtn').onclick=()=>{if(confirm('Reset all settings to the original plan?')){cfg={...DEFAULTS};localStorage.removeItem('runwayConfig');viewDate=parseDate(cfg.start);render()}};
+$('#applySettings').onclick=()=>{$$('#settingsForm input').forEach(i=>cfg[i.dataset.key]=+i.value);localStorage.setItem('budgetOSConfig2026',JSON.stringify(cfg));render()};
+$('#resetBtn').onclick=()=>{if(confirm('Reset all settings to the original plan?')){cfg={...DEFAULTS};localStorage.removeItem('budgetOSConfig2026');viewDate=parseDate(cfg.start);render()}};
 $('#printBtn').onclick=()=>window.print();
 $('#todayBtn').onclick=()=>{viewDate=new Date();selectedDate=new Date();renderCalendar();$('#calendarSection').scrollIntoView()};
 $('#prevMonth').onclick=()=>{viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()-1,1);if(viewDate<state.START)viewDate=new Date(state.START);selectedDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),1);renderCalendar()};
